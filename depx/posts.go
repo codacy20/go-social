@@ -26,7 +26,7 @@ type DepxPost struct {
 	Body   string `json:"body"`
 }
 
-func FetchPosts(ctx context.Context) ([]byte, int, error) {
+func FetchPosts(ctx context.Context) ([]DepxPost, int, error) {
 	log.Info("Depx: Creating HTTP request for posts")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://jsonplaceholder.typicode.com/posts", nil)
 	if err != nil {
@@ -76,13 +76,6 @@ func FetchPosts(ctx context.Context) ([]byte, int, error) {
 		}
 	}
 
-	// Marshal the validated posts back to JSON.
-	validatedData, err := json.Marshal(posts)
-	if err != nil {
-		log.Errorf("Depx: Error marshaling validated posts: %v", err)
-		return nil, resp.StatusCode, err
-	}
-
 	log.Info("Depx: Successfully validated and marshaled posts data")
-	return validatedData, resp.StatusCode, nil
+	return posts, resp.StatusCode, nil
 }

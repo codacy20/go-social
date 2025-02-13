@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"net/http"
 	"social/providers"
 
@@ -23,6 +24,15 @@ func postsHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Marshal the typed response into JSON.
+	posts, err := json.Marshal(data)
+	if err != nil {
+		log.Errorf("Error marshalling posts data: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	log.Infof("Successfully retrieved posts data with status %d", status)
-	c.Data(status, "application/json", data)
+	c.Data(status, "application/json", posts)
 }
