@@ -13,7 +13,7 @@ func SetupPostsRoute(router *gin.Engine) {
 
 func postsHandler(c *gin.Context) {
 
-	data, status, err := providers.GetPosts()
+	data, status, err := providers.GetPosts(c.Request.Context())
 	if err != nil {
 		c.JSON(status, gin.H{
 			"error": err.Error(),

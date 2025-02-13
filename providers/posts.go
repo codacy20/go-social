@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"context"
 	"encoding/json"
 	"social/depx"
 )
@@ -12,8 +13,8 @@ type Post struct {
 	Body   string `json:"body"`
 }
 
-func GetPosts() ([]byte, int, error) {
-	data, status, err := depx.FetchPosts()
+func GetPosts(ctx context.Context) ([]byte, int, error) {
+	data, status, err := depx.FetchPosts(ctx)
 	if err != nil {
 		return nil, status, err
 	}
