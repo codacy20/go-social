@@ -2,11 +2,13 @@ package depx
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"time"
 
+	validation "github.com/go-ozzo/ozzo-validation"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,7 +17,22 @@ var httpClient = &http.Client{
 	Timeout: 10 * time.Second,
 }
 
-// FetchPosts fetches JSON posts from the external API using the provided context.
+type DepxPost struct {
+	UserID int    `json:"userId"`
+	ID     int    `json:"id"`
+	Title  string `json:"title"`
+	Body   string `json:"body"`
+}
+
+func (p DepxPost) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.UserID, validation.Required),
+		validation.Field(&p.ID, validation.Required),
+		validation.Field(&p.Title, validation.Required),
+		validation.Field(&p.Body, validation.Required),
+	)
+}
+
 func FetchPosts(ctx context.Context) ([]byte, int, error) {
 	log.Info("Depx: Creating HTTP request for posts")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://jsonplaceholder.typicode.com/posts", nil)
@@ -34,7 +51,7 @@ func FetchPosts(ctx context.Context) ([]byte, int, error) {
 	log.Infof("Depx: Received response with status code %d", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
-		errMsg := "depx: failed to fetch posts: non-OK HTTP status"
+		errMsg := "depx: Failed to fetch posts: non-OK HTTP status"
 		log.Error(errMsg)
 		return nil, resp.StatusCode, errors.New(errMsg)
 	}
@@ -45,5 +62,29 @@ func FetchPosts(ctx context.Context) ([]byte, int, error) {
 		return nil, resp.StatusCode, err
 	}
 	log.Info("Depx: Successfully read response body")
-	return body, resp.StatusCode, nil
+
+	// Unmarshal the raw JSON into a slice of DepxPost.
+	var posts []DepxPost
+	if err := json.Unmarshal(body, &posts); err != nil {
+		log.Errorf("Depx: Error unmarshaling posts: %v", err)
+		return nil, resp.StatusCode, err
+	}
+
+	// Validate each post.
+	for i, post := range posts {
+		if err := post.Validate(); err != nil {
+			log.Errorf("Depx: Validation error in post index %d: %v", i, err)
+			return nil, resp.StatusCode, err
+		}
+	}
+
+	// Marshal the validated posts back to JSON.
+	validatedData, err := json.Marshal(posts)
+	if err != nil {
+		log.Errorf("Depx: Error marshaling validated posts: %v", err)
+		return nil, resp.StatusCode, err
+	}
+
+	log.Info("Depx: Successfully validated and marshaled posts data")
+	return validatedData, resp.StatusCode, nil
 }
