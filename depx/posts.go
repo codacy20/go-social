@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	validation "github.com/go-ozzo/ozzo-validation"
+	validator "social/depx/validation"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -22,15 +24,6 @@ type DepxPost struct {
 	ID     int    `json:"id"`
 	Title  string `json:"title"`
 	Body   string `json:"body"`
-}
-
-func (p DepxPost) Validate() error {
-	return validation.ValidateStruct(&p,
-		validation.Field(&p.UserID, validation.Required),
-		validation.Field(&p.ID, validation.Required),
-		validation.Field(&p.Title, validation.Required),
-		validation.Field(&p.Body, validation.Required),
-	)
 }
 
 func FetchPosts(ctx context.Context) ([]byte, int, error) {
@@ -72,7 +65,12 @@ func FetchPosts(ctx context.Context) ([]byte, int, error) {
 
 	// Validate each post.
 	for i, post := range posts {
-		if err := post.Validate(); err != nil {
+		if err := validator.ValidateModel(&post,
+			validation.Field(&post.UserID, validation.Required),
+			validation.Field(&post.ID, validation.Required),
+			validation.Field(&post.Title, validation.Required),
+			validation.Field(&post.Body, validation.Required),
+		); err != nil {
 			log.Errorf("Depx: Validation error in post index %d: %v", i, err)
 			return nil, resp.StatusCode, err
 		}
