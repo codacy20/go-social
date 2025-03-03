@@ -19,6 +19,7 @@ func main() {
 	// Register routes.
 	routes.SetupReadyRoute(router)
 	routes.SetupPostsRoute(router)
+	routes.SetupCommentsRoute(router)
 
 	// Run the server.
 	if err := router.Run(":8080"); err != nil {
